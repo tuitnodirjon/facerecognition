@@ -1,35 +1,45 @@
 
 
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, request, redirect, url_for
 import cv2
 import face_recognition
 import numpy as np
 app=Flask(__name__)
-camera = cv2.VideoCapture(0)
+
 # Load a sample picture and learn how to recognize it.
-krish_image = face_recognition.load_image_file("Krish/krish.jpg")
-krish_face_encoding = face_recognition.face_encodings(krish_image)[0]
+# krish_image = face_recognition.load_image_file("Nodirjon/Nodirjon.png")
+# krish_face_encoding = face_recognition.face_encodings(krish_image)[0]
+#
+# # Load a second sample picture and learn how to recognize it.
+# bradley_image = face_recognition.load_image_file("Bradley/bradley.JPG")
+# bradley_face_encoding = face_recognition.face_encodings(bradley_image)[0]
+#
+# # Create arrays of known face encodings and their names
+# known_face_encodings = [
+#     krish_face_encoding,
+#     bradley_face_encoding
+# ]
+# known_face_names = [
+#     "Nodirbek",
+#     "Bradly"
+# ]
+import os
+peoples = os.listdir('people')
+known_face_encodings = []
+known_face_names = []
+for i in peoples:
+    image = face_recognition.load_image_file("people/"+i)
+    face_encoding = face_recognition.face_encodings(image)[0]
+    known_face_encodings.append(face_encoding)
+    known_face_names.append(i.split('.')[0])
 
-# Load a second sample picture and learn how to recognize it.
-bradley_image = face_recognition.load_image_file("Bradley/bradley.jpg")
-bradley_face_encoding = face_recognition.face_encodings(bradley_image)[0]
-
-# Create arrays of known face encodings and their names
-known_face_encodings = [
-    krish_face_encoding,
-    bradley_face_encoding
-]
-known_face_names = [
-    "Krish",
-    "Bradly"
-]
-# Initialize some variables
 face_locations = []
 face_encodings = []
 face_names = []
 process_this_frame = True
 
-def gen_frames():  
+def gen_frames():
+    camera = cv2.VideoCapture(0)
     while True:
         success, frame = camera.read()  # read the camera frame
         if not success:
@@ -86,5 +96,15 @@ def index():
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/upload', methods=['POST', 'GET'])
+def uploud():
+    if request.method == 'POST':
+        print(request.files, request.form)
+        f = request.files['file']
+        f.save(os.path.join('people', request.form['name']+'.'+f.filename.split('.')[-1]))
+        return redirect(url_for('index'))
+    return render_template('uploud.html')
+
+
 if __name__=='__main__':
     app.run(debug=True)
